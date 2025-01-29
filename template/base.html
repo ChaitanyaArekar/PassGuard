@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PassGuard</title>
+  <link rel="stylesheet" href="/static/css/layout.css">
+  <style>
+
+  </style>
+  {% block css%}{%endblock%}
+</head>
+<body>
+  <!-- Mobile Header -->
+  <div class="mobile-header">
+    <button class="mobile-menu-toggle" aria-label="Toggle Menu">&#9776;</button>
+    <div class="logo">PassGuard</div>
+  </div>
+
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay"></div>
+
+  <div class="dashboard">
+    <aside class="sidebar">
+      <div class="logo">PassGuard</div>
+      <nav class="nav-links">
+        <a href="{{ url_for('generator') }}" class="nav-link {% if request.endpoint == 'password_generator' %}active{% endif %}">🔑 Password Generator</a>
+        <a href="{{ url_for('manager') }}" class="nav-link {% if request.endpoint == 'password_manager' %}active{% endif %}">🗂 Password Manager</a>
+      </nav>
+      <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+    </aside>
+    <main class="main-content">
+      <header class="header">
+        <div class="flash-messages">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+        </div>
+      </header>
+      {% block content %}
+      {% endblock %}
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const menuToggle = document.querySelector('.mobile-menu-toggle');
+      const sidebar = document.querySelector('.sidebar');
+      const sidebarOverlay = document.querySelector('.sidebar-overlay');
+
+      menuToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+      });
+
+      sidebarOverlay.addEventListener('click', function() {
+        sidebar.classList.remove('open');
+        sidebarOverlay.style.display = 'none';
+      });
+    });
+  </script>
+</body>
+</html>
