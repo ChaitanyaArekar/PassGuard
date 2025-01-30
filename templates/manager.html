@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block css %}
+<link rel="stylesheet" href="/static/css/manager.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h2>Password Manager</h2>
+        <div class="nav-buttons">
+            <button class="nav-btn active" onclick="showSection('add-section')">Add Password</button>
+            <button class="nav-btn" onclick="showSection('stored-section')">View Saved Passwords</button>
+        </div>
+    </div>
+
+    <div id="add-section" class="section active">
+        <h2>Add Password:</h2><br>
+        <form method="POST" action="{{ url_for('add_password') }}" class="password-form">
+            <div class="form-group">
+                <input type="text" name="site_name" placeholder="Site Name" required>
+            </div>
+            <div class="form-group">
+                <input type="url" name="url" placeholder="URL" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="username" placeholder="Username" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="password" placeholder="Password" required>
+            </div>
+            <button type="submit" class="submit-btn">Add Password</button>
+        </form>
+    </div>
+
+    <div id="stored-section" class="section">
+        <h2>Stored Passwords:</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Site Name</th>
+                    <th>URL</th>
+                    <th>Username</th>
+                    <th>Password</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for password in passwords %}
+                <tr>
+                    <td>{{ password.site_name }}</td>
+                    <td><a href="{{ password.url }}" class="url-link" target="_blank">{{ password.url }}</a></td>
+                    <td>{{ password.username }}</td>
+                    <td class="form-group">
+                        <input type="password" value="{{ password.password }}" readonly>
+                        <button type="button" class="toggle-password-btn" onclick="togglePassword(this)">👁️</button>
+                    </td>
+                    <td class="actions">
+                        <button onclick="openEditModal('{{ password.site_name }}')" class="action-btn edit-btn">Edit</button>
+                        <button onclick="openDeleteModal('{{ password.site_name }}')" class="action-btn delete-btn">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Edit Password Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Edit Password</h3>
+            <button class="close-modal" onclick="closeEditModal()">&times;</button>
+        </div>
+        <form id="editForm" method="POST" class="modal-form">
+            <div class="form-group">
+                <input type="text" name="site_name" placeholder="Site Name" required>
+            </div>
+            <div class="form-group">
+                <input type="url" name="url" placeholder="URL" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="username" placeholder="Username" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="password" placeholder="Password" required>
+            </div>
+            <button type="submit" class="submit-btn">Update Password</button>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal confirm-delete-modal">
+    <div class="modal-content">
+        <h3>Confirm Delete</h3>
+        <p>Are you sure you want to delete this password?</p>
+        <form id="deleteForm" method="POST">
+            <div class="button-group">
+                <button type="button" class="action-btn" onclick="closeDeleteModal()">Cancel</button>
+                <button type="submit" class="action-btn delete-btn">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function showSection(sectionId) {
+        // Update button states
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+
+        // Update section visibility
+        document.querySelectorAll('.section').forEach(section => {
+            section.classList.remove('active');
+        });
+        document.getElementById(sectionId).classList.add('active');
+    }
+
+    function togglePassword(button) {
+        const input = button.previousElementSibling || button.closest('.form-group').querySelector('input');
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    function openEditModal(siteNameId) {
+        const modal = document.getElementById('editModal');
+        const form = document.getElementById('editForm');
+        const row = event.target.closest('tr');
+        
+        // Fill form with current values
+        form.site_name.value = row.cells[0].textContent;
+        form.url.value = row.cells[1].querySelector('a').href;
+        form.username.value = row.cells[2].textContent;
+        form.password.value = row.cells[3].querySelector('input').value;
+        
+        // Set form action
+        form.action = `/edit-password/${siteNameId}`;
+        
+        modal.style.display = 'block';
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    function openDeleteModal(siteNameId) {
+        const modal = document.getElementById('deleteModal');
+        const form = document.getElementById('deleteForm');
+        form.action = `/delete-password/${siteNameId}`;
+        modal.style.display = 'block';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+    }
+
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

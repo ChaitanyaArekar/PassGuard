@@ -75,5 +75,58 @@ def logout():
     logout_user()
     return redirect(url_for("login"))
 
+@app.route('/generator', methods=['GET', 'POST'])
+@login_required
+def generator():
+    encrypted_password = ""
+    user = users_col.find_one({"_id": ObjectId(current_user.id)})
+    
+    if request.method == 'POST':
+        username = request.form.get('username', '').lower()
+        surname = request.form.get('surname', '').lower()
+        dob = request.form.get('dob', '').replace('-', '')
+        combined_input = f"{username}{surname}{dob}"
+        encryption_option = request.form.get('encryption', '0')
+
+        if encryption_option == '1':  # Caesar Cipher
+            shift = int(request.form.get('shift', 0))
+            encrypted_password = caesar_cipher(combined_input, shift)
+        elif encryption_option == '2':  # Rail Fence Cipher
+            num_rails = int(request.form.get('num_rails', 3))
+            encrypted_password = rail_fence_cipher(combined_input, num_rails)
+        else:
+            encrypted_password = combined_input
+
+    return render_template("generator.html", username=user["username"], encrypted_password=encrypted_password)
+
+@app.route('/manager')
+@login_required
+def manager():
+    user = users_col.find_one({"_id": ObjectId(current_user.id)})
+    return render_template("manager.html", username=user["username"], passwords=user["stored_passwords"])
+
+@app.route('/add-password', methods=["POST"])
+@login_required
+def add_password():
+    site_name = request.form["site_name"]
+    url = request.form["url"]
+    username = request.form["username"]
+    password = request.form["password"]
+    
+    new_password_entry = {
+        "site_name": site_name,
+        "url": url,
+        "username": username,
+        "password": password
+    }
+    
+    users_col.update_one(
+        {"_id": ObjectId(current_user.id)},
+        {"$push": {"stored_passwords": new_password_entry}}
+    )
+    
+    flash("Password added successfully.", "success")
+    return redirect(url_for("manager"))
+
 if __name__ == '__main__':
     app.run(debug=True) 

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block css %}
+<link rel="stylesheet" href="/static/css/generator.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h2>Password Generator</h2>
+    </div>
+    
+    <div class="form-container">
+        <form method="POST" class="password-form">
+            <div class="form-group">
+                <label for="username">Enter your Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="surname">Enter your Surname:</label>
+                <input type="text" id="surname" name="surname" required>
+            </div>
+            <div class="form-group" id="encryption-key" style="display:none;">
+                <label for="shift">Encryption Key (1-25):</label>
+                <input type="number" id="shift" name="shift" min="1" max="25" required>
+            </div>
+            <div class="form-group" id="rails-input" style="display:none;">
+                <label for="num_rails">Number of Levels:</label>
+                <input type="number" id="num_rails" name="num_rails" min="2" required>
+            </div>
+            <div class="form-group">
+                <label id="encryption-label" for="encryption">Encryption Type</label>
+                <input type="range" id="encryption" name="encryption" min="0" max="2" value="0" oninput="toggleEncryptionKey()">
+                <div class="slider-labels">
+                    <span>None</span>
+                    <span>Easy</span>
+                    <span>Hard</span>
+                </div>
+            </div>
+            <button type="submit" class="submit-btn">Generate Password</button>
+        </form>
+    </div>
+
+    {% if encrypted_password %}
+    <div class="result-container">
+        <h3>Generated Password:</h3>
+        <div class="password-result">
+            <p id="generated-password">{{ encrypted_password }}</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleEncryptionKey() {
+    const encryptionOption = document.getElementById('encryption').value;
+    const encryptionKeyDiv = document.getElementById('encryption-key');
+    const railsDiv = document.getElementById('rails-input');
+    const shiftInput = document.getElementById('shift');
+    const railsInput = document.getElementById('num_rails');
+    const encryptionLabel = document.getElementById('encryption-label');
+
+    if (encryptionOption == 1) {
+        encryptionLabel.textContent = 'Encryption Type : Easy';
+        encryptionKeyDiv.style.display = 'block';
+        shiftInput.disabled = false;
+        railsDiv.style.display = 'none';
+        railsInput.disabled = true;
+    } else if (encryptionOption == 2) {
+        encryptionLabel.textContent = 'Encryption Type : Hard';
+        encryptionKeyDiv.style.display = 'none';
+        shiftInput.disabled = true;
+        railsDiv.style.display = 'block';
+        railsInput.disabled = false;
+    } else {
+        encryptionLabel.textContent = 'Encryption Type : None';
+        encryptionKeyDiv.style.display = 'none';
+        shiftInput.disabled = true;
+        railsDiv.style.display = 'none';
+        railsInput.disabled = true;
+    }
+}
+
+window.onload = function() {
+    toggleEncryptionKey();  
+};
+</script>
+{% endblock %}
