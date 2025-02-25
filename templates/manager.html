@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="content-wrapper">
     <div class="header">
         <h2>Password Manager</h2>
         <div class="nav-buttons">
@@ -29,40 +29,48 @@
             <div class="form-group">
                 <input type="text" name="password" placeholder="Password" required>
             </div>
-            <button type="submit" class="submit-btn">Add Password</button>
+            <button type="submit" class="submit-btn">
+                <i class="fas fa-plus"></i> Add Password
+            </button>
         </form>
     </div>
 
     <div id="stored-section" class="section">
         <h2>Stored Passwords:</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Site Name</th>
-                    <th>URL</th>
-                    <th>Username</th>
-                    <th>Password</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for password in passwords %}
-                <tr>
-                    <td>{{ password.site_name }}</td>
-                    <td><a href="{{ password.url }}" class="url-link" target="_blank">{{ password.url }}</a></td>
-                    <td>{{ password.username }}</td>
-                    <td class="form-group">
-                        <input type="password" value="{{ password.password }}" readonly>
-                        <button type="button" class="toggle-password-btn" onclick="togglePassword(this)">👁️</button>
-                    </td>
-                    <td class="actions">
-                        <button onclick="openEditModal('{{ password.site_name }}')" class="action-btn edit-btn">Edit</button>
-                        <button onclick="openDeleteModal('{{ password.site_name }}')" class="action-btn delete-btn">Delete</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="password-grid">
+            {% for password in passwords %}
+            <div class="password-card" data-id="{{ password.id }}">
+                <div class="card-header">
+                    <h3>{{ password.site_name }}</h3>
+                    <div class="card-actions">
+                        <button onclick="openEditModal('{{ password.id }}')" class="action-btn edit-btn">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="openDeleteModal('{{ password.id }}')" class="action-btn delete-btn">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="card-field">
+                        <label>URL:</label>
+                        <a href="{{ password.url }}" class="url-link" target="_blank">{{ password.url }}</a>
+                    </div>
+                    <div class="card-field">
+                        <label>Username:</label>
+                        <span>{{ password.username }}</span>
+                    </div>
+                    <div class="card-field password-field">
+                        <label>Password:</label>
+                        <div class="password-container">
+                            <input type="password" value="{{ password.password }}" readonly>
+                            <button type="button" class="toggle-password-btn" onclick="togglePassword(this)">👁️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
 
@@ -86,7 +94,9 @@
             <div class="form-group">
                 <input type="text" name="password" placeholder="Password" required>
             </div>
-            <button type="submit" class="submit-btn">Update Password</button>
+            <button type="submit" class="submit-btn">
+                <i class="fas fa-save"></i> Update Password
+            </button>
         </form>
     </div>
 </div>
@@ -98,8 +108,12 @@
         <p>Are you sure you want to delete this password?</p>
         <form id="deleteForm" method="POST">
             <div class="button-group">
-                <button type="button" class="action-btn" onclick="closeDeleteModal()">Cancel</button>
-                <button type="submit" class="action-btn delete-btn">Delete</button>
+                <button type="button" class="action-btn" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" class="action-btn delete-btn">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
             </div>
         </form>
     </div>
@@ -107,13 +121,11 @@
 
 <script>
     function showSection(sectionId) {
-        // Update button states
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.classList.remove('active');
         });
         event.target.classList.add('active');
 
-        // Update section visibility
         document.querySelectorAll('.section').forEach(section => {
             section.classList.remove('active');
         });
@@ -128,15 +140,13 @@
     function openEditModal(siteNameId) {
         const modal = document.getElementById('editModal');
         const form = document.getElementById('editForm');
-        const row = event.target.closest('tr');
+        const card = event.target.closest('.password-card');
         
-        // Fill form with current values
-        form.site_name.value = row.cells[0].textContent;
-        form.url.value = row.cells[1].querySelector('a').href;
-        form.username.value = row.cells[2].textContent;
-        form.password.value = row.cells[3].querySelector('input').value;
+        form.site_name.value = card.querySelector('.card-header h3').textContent;
+        form.url.value = card.querySelector('.url-link').href;
+        form.username.value = card.querySelector('.card-field span').textContent;
+        form.password.value = card.querySelector('.password-container input').value;
         
-        // Set form action
         form.action = `/edit-password/${siteNameId}`;
         
         modal.style.display = 'block';
@@ -146,10 +156,10 @@
         document.getElementById('editModal').style.display = 'none';
     }
 
-    function openDeleteModal(siteNameId) {
+    function openDeleteModal(passwordId) {
         const modal = document.getElementById('deleteModal');
         const form = document.getElementById('deleteForm');
-        form.action = `/delete-password/${siteNameId}`;
+        form.action = `/delete-password/${passwordId}`;
         modal.style.display = 'block';
     }
 

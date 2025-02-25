@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="content-wrapper">
     <div class="header">
         <h2>Password Generator</h2>
     </div>
@@ -13,20 +13,12 @@
     <div class="form-container">
         <form method="POST" class="password-form">
             <div class="form-group">
-                <label for="username">Enter your Username:</label>
+                <label for="username">Username</label>
                 <input type="text" id="username" name="username" required>
             </div>
             <div class="form-group">
-                <label for="surname">Enter your Surname:</label>
+                <label for="surname">Surname</label>
                 <input type="text" id="surname" name="surname" required>
-            </div>
-            <div class="form-group" id="encryption-key" style="display:none;">
-                <label for="shift">Encryption Key (1-25):</label>
-                <input type="number" id="shift" name="shift" min="1" max="25" required>
-            </div>
-            <div class="form-group" id="rails-input" style="display:none;">
-                <label for="num_rails">Number of Levels:</label>
-                <input type="number" id="num_rails" name="num_rails" min="2" required>
             </div>
             <div class="form-group">
                 <label id="encryption-label" for="encryption">Encryption Type</label>
@@ -37,13 +29,20 @@
                     <span>Hard</span>
                 </div>
             </div>
-            <button type="submit" class="submit-btn">Generate Password</button>
+            <div class="form-group" id="encryption-key" style="display:none;">
+                <label for="shift">Key (1-25)</label>
+                <input type="number" id="shift" name="shift" min="1" max="25" required>
+            </div>
+            <div class="form-group" id="rails-input" style="display:none;">
+                <label for="num_rails">Levels</label>
+                <input type="number" id="num_rails" name="num_rails" min="2" required>
+            </div>
+            <button type="submit" class="submit-btn">Generate</button>
         </form>
     </div>
 
     {% if encrypted_password %}
     <div class="result-container">
-        <h3>Generated Password:</h3>
         <div class="password-result">
             <p id="generated-password">{{ encrypted_password }}</p>
         </div>

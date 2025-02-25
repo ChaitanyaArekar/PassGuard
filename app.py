@@ -146,8 +146,9 @@ def add_password():
     url = request.form["url"]
     username = request.form["username"]
     password = request.form["password"]
-    
+    unique_id = str(ObjectId())
     new_password_entry = {
+        "id": unique_id,
         "site_name": site_name,
         "url": url,
         "username": username,
@@ -168,7 +169,7 @@ def edit_password_page(password_id):
     user = users_col.find_one({"_id": ObjectId(current_user.id)})
     passwords = user.get("stored_passwords", [])
     
-    password_entry = next((p for p in passwords if p["site_name"] == password_id), None)
+    password_entry = next((p for p in passwords if p["id"] == password_id), None)
     
     if not password_entry:
         flash("Password not found.", "danger")
@@ -176,6 +177,7 @@ def edit_password_page(password_id):
     
     if request.method == "POST":
         updated_password_entry = {
+            "id": password_id,
             "site_name": request.form["site_name"],
             "url": request.form["url"],
             "username": request.form["username"],
@@ -185,7 +187,7 @@ def edit_password_page(password_id):
         users_col.update_one(
             {
                 "_id": ObjectId(current_user.id),
-                "stored_passwords.site_name": password_id
+                "stored_passwords.id": password_id
             },
             {
                 "$set": {
@@ -204,7 +206,7 @@ def edit_password_page(password_id):
 def delete_password(password_id):
     result = users_col.update_one(
         {"_id": ObjectId(current_user.id)},
-        {"$pull": {"stored_passwords": {"site_name": password_id}}}
+        {"$pull": {"stored_passwords": {"id": password_id}}}
     )
     
     if result.modified_count > 0:
@@ -214,5 +216,6 @@ def delete_password(password_id):
     
     return redirect(url_for("manager")) 
 
-    if __name__ == '__main__':
+
+if __name__ == '__main__':
         app.run(debug=True)
