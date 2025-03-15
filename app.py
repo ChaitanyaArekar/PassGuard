@@ -122,10 +122,10 @@ def generator():
         combined_input = f"{username}{surname}{dob}"
         encryption_option = request.form.get('encryption', '0')
 
-        if encryption_option == '1':  # Caesar Cipher
+        if encryption_option == '1':
             shift = int(request.form.get('shift', 0))
             encrypted_password = caesar_cipher(combined_input, shift)
-        elif encryption_option == '2':  # Rail Fence Cipher
+        elif encryption_option == '2':
             num_rails = int(request.form.get('num_rails', 3))
             encrypted_password = rail_fence_cipher(combined_input, num_rails)
         else:
