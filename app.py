@@ -2,11 +2,10 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from pymongo import MongoClient
-from bson import ObjectId
+from pymongo.errors import ConnectionFailure
+from pymongo.objectid import ObjectId
 import os
 from dotenv import load_dotenv
-import random
-import string
 
 load_dotenv()
 
@@ -17,9 +16,12 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
 
-client = MongoClient(os.getenv("MONGO_URI"))
-db = client["PassGuard"]
-users_col = db["users"]
+try:
+    client = MongoClient(os.getenv("MONGO_URI"))
+    db = client["PassGuard"]
+    users_col = db["users"]
+except ConnectionFailure:
+    print("MongoDB server not available")
 
 class User(UserMixin):
     def __init__(self, user_id):
