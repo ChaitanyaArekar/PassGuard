@@ -16,12 +16,15 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
 
-try:
-    client = MongoClient(os.getenv("MONGO_URI"))
-    db = client["PassGuard"]
-    users_col = db["users"]
-except ConnectionFailure:
-    print("MongoDB server not available")
+# Move MongoDB connection inside a function to avoid connection errors during startup
+def get_db():
+    try:
+        client = MongoClient(os.getenv("MONGO_URI"))
+        db = client["PassGuard"]
+        return db
+    except ConnectionFailure:
+        print("MongoDB server not available")
+        return None
 
 class User(UserMixin):
     def __init__(self, user_id):
@@ -29,9 +32,11 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    user_data = users_col.find_one({"_id": ObjectId(user_id)})
-    if user_data:
-        return User(user_id)
+    db = get_db()
+    if db:
+        user_data = db["users"].find_one({"_id": ObjectId(user_id)})
+        if user_data:
+            return User(user_id)
     return None
 
 def caesar_cipher(text, shift):
@@ -80,13 +85,17 @@ def register():
         email = request.form["email"]
         password = bcrypt.generate_password_hash(request.form["password"]).decode('utf-8')
         
-        if users_col.find_one({"email": email}):
-            flash("Email already registered.", "danger")
-            return redirect(url_for("register"))
+        db = get_db()
+        if db:
+            if db["users"].find_one({"email": email}):
+                flash("Email already registered.", "danger")
+                return redirect(url_for("register"))
 
-        users_col.insert_one({"username": username, "email": email, "password": password, "stored_passwords": []})
-        flash("Registration successful. Please log in.", "success")
-        return redirect(url_for("login"))
+            db["users"].insert_one({"username": username, "email": email, "password": password, "stored_passwords": []})
+            flash("Registration successful. Please log in.", "success")
+            return redirect(url_for("login"))
+        else:
+            flash("Database connection error.", "danger")
     
     return render_template("login.html")
 
@@ -95,11 +104,14 @@ def login():
     if request.method == "POST":
         email = request.form["email"]
         password = request.form["password"]
-        user = users_col.find_one({"email": email})
         
-        if user and bcrypt.check_password_hash(user["password"], password):
-            login_user(User(str(user["_id"])))
-            return redirect(url_for("generator"))
+        db = get_db()
+        if db:
+            user = db["users"].find_one({"email": email})
+            
+            if user and bcrypt.check_password_hash(user["password"], password):
+                login_user(User(str(user["_id"])))
+                return redirect(url_for("generator"))
         
         flash("Invalid credentials.", "danger")
     
@@ -115,31 +127,41 @@ def logout():
 @login_required
 def generator():
     encrypted_password = ""
-    user = users_col.find_one({"_id": ObjectId(current_user.id)})
+    db = get_db()
+    if db:
+        user = db["users"].find_one({"_id": ObjectId(current_user.id)})
+        
+        if request.method == 'POST':
+            username = request.form.get('username', '').lower()
+            surname = request.form.get('surname', '').lower()
+            dob = request.form.get('dob', '').replace('-', '')
+            combined_input = f"{username}{surname}{dob}"
+            encryption_option = request.form.get('encryption', '0')
+
+            if encryption_option == '1':
+                shift = int(request.form.get('shift', 0))
+                encrypted_password = caesar_cipher(combined_input, shift)
+            elif encryption_option == '2':
+                num_rails = int(request.form.get('num_rails', 3))
+                encrypted_password = rail_fence_cipher(combined_input, num_rails)
+            else:
+                encrypted_password = combined_input
+
+        return render_template("generator.html", username=user["username"], encrypted_password=encrypted_password)
     
-    if request.method == 'POST':
-        username = request.form.get('username', '').lower()
-        surname = request.form.get('surname', '').lower()
-        dob = request.form.get('dob', '').replace('-', '')
-        combined_input = f"{username}{surname}{dob}"
-        encryption_option = request.form.get('encryption', '0')
-
-        if encryption_option == '1':
-            shift = int(request.form.get('shift', 0))
-            encrypted_password = caesar_cipher(combined_input, shift)
-        elif encryption_option == '2':
-            num_rails = int(request.form.get('num_rails', 3))
-            encrypted_password = rail_fence_cipher(combined_input, num_rails)
-        else:
-            encrypted_password = combined_input
-
-    return render_template("generator.html", username=user["username"], encrypted_password=encrypted_password)
+    flash("Database connection error", "danger")
+    return redirect(url_for("login"))
 
 @app.route('/manager')
 @login_required
 def manager():
-    user = users_col.find_one({"_id": ObjectId(current_user.id)})
-    return render_template("manager.html", username=user["username"], passwords=user["stored_passwords"])
+    db = get_db()
+    if db:
+        user = db["users"].find_one({"_id": ObjectId(current_user.id)})
+        return render_template("manager.html", username=user["username"], passwords=user["stored_passwords"])
+    
+    flash("Database connection error", "danger")
+    return redirect(url_for("login"))
 
 @app.route('/add-password', methods=["POST"])
 @login_required
@@ -157,18 +179,28 @@ def add_password():
         "password": password
     }
     
-    users_col.update_one(
-        {"_id": ObjectId(current_user.id)},
-        {"$push": {"stored_passwords": new_password_entry}}
-    )
+    db = get_db()
+    if db:
+        db["users"].update_one(
+            {"_id": ObjectId(current_user.id)},
+            {"$push": {"stored_passwords": new_password_entry}}
+        )
+        
+        flash("Password added successfully.", "success")
+    else:
+        flash("Database connection error", "danger")
     
-    flash("Password added successfully.", "success")
     return redirect(url_for("manager"))
 
 @app.route('/edit-password/<password_id>', methods=["GET", "POST"])
 @login_required
 def edit_password_page(password_id):
-    user = users_col.find_one({"_id": ObjectId(current_user.id)})
+    db = get_db()
+    if not db:
+        flash("Database connection error", "danger")
+        return redirect(url_for("manager"))
+    
+    user = db["users"].find_one({"_id": ObjectId(current_user.id)})
     passwords = user.get("stored_passwords", [])
     
     password_entry = next((p for p in passwords if p["id"] == password_id), None)
@@ -186,7 +218,7 @@ def edit_password_page(password_id):
             "password": request.form["password"]
         }
         
-        users_col.update_one(
+        db["users"].update_one(
             {
                 "_id": ObjectId(current_user.id),
                 "stored_passwords.id": password_id
@@ -206,7 +238,12 @@ def edit_password_page(password_id):
 @app.route('/delete-password/<password_id>', methods=["POST"])
 @login_required
 def delete_password(password_id):
-    result = users_col.update_one(
+    db = get_db()
+    if not db:
+        flash("Database connection error", "danger")
+        return redirect(url_for("manager"))
+    
+    result = db["users"].update_one(
         {"_id": ObjectId(current_user.id)},
         {"$pull": {"stored_passwords": {"id": password_id}}}
     )
@@ -220,4 +257,4 @@ def delete_password(password_id):
 
 
 if __name__ == '__main__':
-        app.run(debug=True)
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', '5000')), debug=True)
