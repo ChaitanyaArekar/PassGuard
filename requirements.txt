@@ -1,4 +1,4 @@
-flask==2.0.1
+flask==2.2.5
 flask-bcrypt==1.0.1
 flask-login==0.5.0
 pymongo==4.3.3
