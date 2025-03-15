@@ -3,7 +3,7 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
-from pymongo.objectid import ObjectId
+from bson.objectid import ObjectId
 import os
 from dotenv import load_dotenv
 
