@@ -237,22 +237,28 @@ def edit_password_page(password_id):
 @app.route('/delete-password/<password_id>', methods=["POST"])
 @login_required
 def delete_password(password_id):
-    db = get_db()
-    if db is None:
-        flash("Database connection error", "danger")
+    try:
+        db = get_db()
+        if db is None:
+            flash("Database connection error", "danger")
+            return redirect(url_for("manager"))
+        
+        result = db["users"].update_one(
+            {"_id": ObjectId(current_user.id)},
+            {"$pull": {"stored_passwords": {"id": password_id}}}
+        )
+        
+        if result.modified_count > 0:
+            flash("Password deleted successfully.", "success")
+        else:
+            flash("Password not found.", "danger")
+        
         return redirect(url_for("manager"))
-    
-    result = db["users"].update_one(
-        {"_id": ObjectId(current_user.id)},
-        {"$pull": {"stored_passwords": {"id": password_id}}}
-    )
-    
-    if result.modified_count > 0:
-        flash("Password deleted successfully.", "success")
-    else:
-        flash("Password not found.", "danger")
-    
-    return redirect(url_for("manager")) 
+        
+    except Exception as e:
+        flash("An error occurred. Please try again.", "danger")
+        print(f"Error occurred while deleting password: {e}")
+        return redirect(url_for("manager"))
 
 
 if __name__ == '__main__':
