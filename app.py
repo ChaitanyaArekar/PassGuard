@@ -16,7 +16,6 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
 
-# Move MongoDB connection inside a function to avoid connection errors during startup
 def get_db():
     try:
         client = MongoClient(os.getenv("MONGO_URI"))
@@ -33,7 +32,7 @@ class User(UserMixin):
 @login_manager.user_loader
 def load_user(user_id):
     db = get_db()
-    if db:
+    if db is not None:
         user_data = db["users"].find_one({"_id": ObjectId(user_id)})
         if user_data:
             return User(user_id)
@@ -86,7 +85,7 @@ def register():
         password = bcrypt.generate_password_hash(request.form["password"]).decode('utf-8')
         
         db = get_db()
-        if db:
+        if db is not None:
             if db["users"].find_one({"email": email}):
                 flash("Email already registered.", "danger")
                 return redirect(url_for("register"))
@@ -106,7 +105,7 @@ def login():
         password = request.form["password"]
         
         db = get_db()
-        if db:
+        if db is not None:
             user = db["users"].find_one({"email": email})
             
             if user and bcrypt.check_password_hash(user["password"], password):
@@ -128,7 +127,7 @@ def logout():
 def generator():
     encrypted_password = ""
     db = get_db()
-    if db:
+    if db is not None:
         user = db["users"].find_one({"_id": ObjectId(current_user.id)})
         
         if request.method == 'POST':
@@ -156,7 +155,7 @@ def generator():
 @login_required
 def manager():
     db = get_db()
-    if db:
+    if db is not None:
         user = db["users"].find_one({"_id": ObjectId(current_user.id)})
         return render_template("manager.html", username=user["username"], passwords=user["stored_passwords"])
     
@@ -180,7 +179,7 @@ def add_password():
     }
     
     db = get_db()
-    if db:
+    if db is not None:
         db["users"].update_one(
             {"_id": ObjectId(current_user.id)},
             {"$push": {"stored_passwords": new_password_entry}}
