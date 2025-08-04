@@ -195,7 +195,7 @@ def add_password():
 @login_required
 def edit_password_page(password_id):
     db = get_db()
-    if not db:
+    if db is None:
         flash("Database connection error", "danger")
         return redirect(url_for("manager"))
     
@@ -238,7 +238,7 @@ def edit_password_page(password_id):
 @login_required
 def delete_password(password_id):
     db = get_db()
-    if not db:
+    if db is None:
         flash("Database connection error", "danger")
         return redirect(url_for("manager"))
     
