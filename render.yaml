@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: passguard
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn -c gunicorn_config.py app:app
