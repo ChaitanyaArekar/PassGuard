@@ -34,10 +34,15 @@
     <aside class="sidebar">
       <div class="logo">PassGuard</div>
       <nav class="nav-links">
+        <a href="{{ url_for('home') }}" class="nav-link {% if request.endpoint == 'home' %}active{% endif %}">🏠 Home</a>
         <a href="{{ url_for('generator') }}" class="nav-link {% if request.endpoint == 'generator' %}active{% endif %}">🔑 Password Generator</a>
         <a href="{{ url_for('manager') }}" class="nav-link {% if request.endpoint == 'manager' %}active{% endif %}">🗂 Password Manager</a>
       </nav>
-      <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="login">Login</a>
+      {% endif %}
     </aside>
     <main class="main-content">
       <header class="header">

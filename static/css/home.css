@@ -1,0 +1,148 @@
+.home-container {
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 80px);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.welcome-section {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: left;
+    margin-bottom: 2rem; 
+    padding-top: 0; 
+}
+
+.welcome-title {
+    font-size: 3rem; 
+    font-weight: 700;
+    margin-bottom: 1rem; 
+    color: #1a202c;
+    line-height: 1.1;
+}
+
+.brand {
+    color: #1e40af;
+}
+
+.welcome-subtitle {
+    font-size: 1.2rem;
+    color: #4a5568;
+    margin-bottom: 1rem; 
+    font-weight: 500;
+}
+
+.welcome-description {
+    font-size: 1rem;
+    color: #718096;
+    line-height: 1.6; 
+    max-width: 650px;
+}
+
+.service-cards {
+    flex: 3;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    max-width: 900px;
+    align-items: stretch;
+    justify-self: center;
+}
+
+.service-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.service-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(140, 82, 255, 0.15);
+    border-color: #8c52ff;
+}
+
+.card-icon {
+    width: 60px; 
+    height: 60px; 
+    margin: 0 auto 1.5rem; 
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem; 
+    color: white;
+    box-shadow: 0 4px 12px rgba(140, 82, 255, 0.3);
+}
+
+.service-card h3 {
+    font-size: 1.5rem; 
+    margin-bottom: 1rem; 
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.service-card p {
+    color: #4a5568;
+    margin-bottom: 2rem; 
+    line-height: 1.6; 
+    font-size: 0.95rem;
+}
+
+.service-btn {
+    display: inline-block;
+    padding: 0.875rem 2rem;
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(140, 82, 255, 0.25);
+}
+
+.service-btn:hover {
+    background: linear-gradient(135deg, #7c3aed, #9333ea);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(140, 82, 255, 0.4);
+}
+
+@media screen and (max-width: 768px) {
+    .home-container {
+        padding: 1.5rem 1rem;
+        min-height: calc(100vh - 60px);
+    }
+
+    .welcome-section {
+        margin-bottom: 1.5rem; 
+        text-align: center;
+    }
+
+    .welcome-title {
+        font-size: 2.2rem;
+    }
+
+    .welcome-description {
+        max-width: 100%;
+    }
+
+    .service-cards {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .service-card {
+        padding: 1.5rem 1rem;
+    }
+}

@@ -123,6 +123,27 @@ body {
   background-color: #c53030;
 }
 
+.login {
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background 0.3s;
+  text-decoration: none;
+  align-self: flex-start;
+  width: 100%;
+  text-align: center;
+}
+
+.login:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(34, 197, 94, 0.3);
+  background-color: #16a34a;
+}
+
 .main-content {
   flex-grow: 1;
   padding: 25px;
@@ -248,7 +269,7 @@ body {
   }
   
   .nav-links {
-    margin-bottom: 65vh;
+    margin-bottom: 60vh;
   }
 
   .main-content {

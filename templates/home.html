@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block css %}
+<link rel="stylesheet" href="/static/css/home.css">
+{% endblock %}
+
+{% block content %}
+<div class="home-container">
+    <div class="welcome-section">
+        <h1 class="welcome-title">Welcome to <span class="brand">PassGuard</span></h1>
+        <p class="welcome-subtitle">Your secure password management solution</p>
+        <p class="welcome-description">
+            Generate strong passwords and manage all your credentials securely in one place. 
+            PassGuard uses advanced encryption to keep your data safe.
+        </p>
+    </div>
+
+    <div class="service-cards">
+        <div class="service-card">
+            <div class="card-icon">
+                <i class="fas fa-key"></i>
+            </div>
+            <h3>Password Generator</h3>
+            <p>Create strong, customized passwords with various encryption levels.</p>
+            <a href="{{ url_for('generator') }}" class="service-btn">Generate Password</a>
+        </div>
+
+        <div class="service-card">
+            <div class="card-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h3>Password Manager</h3>
+            <p>Securely store, organize, and manage all your website credentials in one encrypted vault.</p>
+            <a href="{{ url_for('manager') }}" class="service-btn">Manage Passwords</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

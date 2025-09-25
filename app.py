@@ -1,8 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure
+from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 import os
 from dotenv import load_dotenv
@@ -10,20 +9,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+app.config["MONGO_URI"] = os.getenv("MONGO_URI")
 app.secret_key = os.getenv("SECRET_KEY")
+mongo = PyMongo(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
-
-def get_db():
-    try:
-        client = MongoClient(os.getenv("MONGO_URI"))
-        db = client["PassGuard"]
-        return db
-    except ConnectionFailure:
-        print("MongoDB server not available")
-        return None
 
 class User(UserMixin):
     def __init__(self, user_id):
@@ -31,11 +23,12 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    db = get_db()
-    if db is not None:
-        user_data = db["users"].find_one({"_id": ObjectId(user_id)})
+    try:
+        user_data = mongo.db.users.find_one({"_id": ObjectId(user_id)})
         if user_data:
             return User(user_id)
+    except Exception as e:
+        print(f"Error loading user: {e}")
     return None
 
 def caesar_cipher(text, shift):
@@ -75,7 +68,7 @@ def rail_fence_cipher(text, num_rails):
 
 @app.route('/')
 def home():
-    return redirect(url_for("login"))
+    return render_template("home.html")
 
 @app.route('/register', methods=["GET", "POST"])
 def register():
@@ -84,17 +77,21 @@ def register():
         email = request.form["email"]
         password = bcrypt.generate_password_hash(request.form["password"]).decode('utf-8')
         
-        db = get_db()
-        if db is not None:
-            if db["users"].find_one({"email": email}):
+        if mongo is None:
+            flash("Database connection error.", "danger")
+            return render_template("login.html")
+        
+        try:
+            if mongo.db.users.find_one({"email": email}):
                 flash("Email already registered.", "danger")
                 return redirect(url_for("register"))
 
-            db["users"].insert_one({"username": username, "email": email, "password": password, "stored_passwords": []})
+            mongo.db.users.insert_one({"username": username, "email": email, "password": password, "stored_passwords": []})
             flash("Registration successful. Please log in.", "success")
             return redirect(url_for("login"))
-        else:
+        except Exception as e:
             flash("Database connection error.", "danger")
+            print(f"Registration error: {e}")
     
     return render_template("login.html")
 
@@ -104,13 +101,14 @@ def login():
         email = request.form["email"]
         password = request.form["password"]
         
-        db = get_db()
-        if db is not None:
-            user = db["users"].find_one({"email": email})
+        try:
+            user = mongo.db.users.find_one({"email": email})
             
             if user and bcrypt.check_password_hash(user["password"], password):
                 login_user(User(str(user["_id"])))
                 return redirect(url_for("generator"))
+        except Exception as e:
+            print(f"Login error: {e}")
         
         flash("Invalid credentials.", "danger")
     
@@ -120,15 +118,14 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for("login"))
+    return redirect(url_for("home"))
 
 @app.route('/generator', methods=['GET', 'POST'])
 @login_required
 def generator():
     encrypted_password = ""
-    db = get_db()
-    if db is not None:
-        user = db["users"].find_one({"_id": ObjectId(current_user.id)})
+    try:
+        user = mongo.db.users.find_one({"_id": ObjectId(current_user.id)})
         
         if request.method == 'POST':
             username = request.form.get('username', '').lower()
@@ -148,19 +145,21 @@ def generator():
 
         return render_template("generator.html", username=user["username"], encrypted_password=encrypted_password)
     
-    flash("Database connection error", "danger")
-    return redirect(url_for("login"))
+    except Exception as e:
+        flash("Database connection error", "danger")
+        print(f"Generator error: {e}")
+        return redirect(url_for("login"))
 
 @app.route('/manager')
 @login_required
 def manager():
-    db = get_db()
-    if db is not None:
-        user = db["users"].find_one({"_id": ObjectId(current_user.id)})
+    try:
+        user = mongo.db.users.find_one({"_id": ObjectId(current_user.id)})
         return render_template("manager.html", username=user["username"], passwords=user["stored_passwords"])
-    
-    flash("Database connection error", "danger")
-    return redirect(url_for("login"))
+    except Exception as e:
+        flash("Database connection error", "danger")
+        print(f"Manager error: {e}")
+        return redirect(url_for("login"))
 
 @app.route('/add-password', methods=["POST"])
 @login_required
@@ -178,72 +177,67 @@ def add_password():
         "password": password
     }
     
-    db = get_db()
-    if db is not None:
-        db["users"].update_one(
+    try:
+        mongo.db.users.update_one(
             {"_id": ObjectId(current_user.id)},
             {"$push": {"stored_passwords": new_password_entry}}
         )
         
         flash("Password added successfully.", "success")
-    else:
+    except Exception as e:
         flash("Database connection error", "danger")
+        print(f"Add password error: {e}")
     
     return redirect(url_for("manager"))
 
 @app.route('/edit-password/<password_id>', methods=["GET", "POST"])
 @login_required
 def edit_password_page(password_id):
-    db = get_db()
-    if db is None:
-        flash("Database connection error", "danger")
-        return redirect(url_for("manager"))
-    
-    user = db["users"].find_one({"_id": ObjectId(current_user.id)})
-    passwords = user.get("stored_passwords", [])
-    
-    password_entry = next((p for p in passwords if p["id"] == password_id), None)
-    
-    if not password_entry:
-        flash("Password not found.", "danger")
-        return redirect(url_for("manager"))
-    
-    if request.method == "POST":
-        updated_password_entry = {
-            "id": password_id,
-            "site_name": request.form["site_name"],
-            "url": request.form["url"],
-            "username": request.form["username"],
-            "password": request.form["password"]
-        }
+    try:
+        user = mongo.db.users.find_one({"_id": ObjectId(current_user.id)})
+        passwords = user.get("stored_passwords", [])
         
-        db["users"].update_one(
-            {
-                "_id": ObjectId(current_user.id),
-                "stored_passwords.id": password_id
-            },
-            {
-                "$set": {
-                    "stored_passwords.$": updated_password_entry
-                }
+        password_entry = next((p for p in passwords if p["id"] == password_id), None)
+        
+        if not password_entry:
+            flash("Password not found.", "danger")
+            return redirect(url_for("manager"))
+        
+        if request.method == "POST":
+            updated_password_entry = {
+                "id": password_id,
+                "site_name": request.form["site_name"],
+                "url": request.form["url"],
+                "username": request.form["username"],
+                "password": request.form["password"]
             }
-        )
+            
+            mongo.db.users.update_one(
+                {
+                    "_id": ObjectId(current_user.id),
+                    "stored_passwords.id": password_id
+                },
+                {
+                    "$set": {
+                        "stored_passwords.$": updated_password_entry
+                    }
+                }
+            )
+            
+            flash("Password updated successfully.", "success")
+            return redirect(url_for("manager"))
         
-        flash("Password updated successfully.", "success")
+        return render_template("edit_password.html", password=password_entry)
+    except Exception as e:
+        flash("Database connection error", "danger")
+        print(f"Edit password error: {e}")
         return redirect(url_for("manager"))
-    
-    return render_template("edit_password.html", password=password_entry)
 
 @app.route('/delete-password/<password_id>', methods=["POST"])
 @login_required
 def delete_password(password_id):
     try:
-        db = get_db()
-        if db is None:
-            flash("Database connection error", "danger")
-            return redirect(url_for("manager"))
-        
-        result = db["users"].update_one(
+        result = mongo.db.users.update_one(
             {"_id": ObjectId(current_user.id)},
             {"$pull": {"stored_passwords": {"id": password_id}}}
         )
