@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 import os
+import random
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -77,10 +78,6 @@ def register():
         email = request.form["email"]
         password = bcrypt.generate_password_hash(request.form["password"]).decode('utf-8')
         
-        if mongo is None:
-            flash("Database connection error.", "danger")
-            return render_template("login.html")
-        
         try:
             if mongo.db.users.find_one({"email": email}):
                 flash("Email already registered.", "danger")
@@ -121,35 +118,30 @@ def logout():
     return redirect(url_for("home"))
 
 @app.route('/generator', methods=['GET', 'POST'])
-@login_required
 def generator():
-    encrypted_password = ""
-    try:
-        user = mongo.db.users.find_one({"_id": ObjectId(current_user.id)})
-        
-        if request.method == 'POST':
-            username = request.form.get('username', '').lower()
-            surname = request.form.get('surname', '').lower()
-            dob = request.form.get('dob', '').replace('-', '')
-            combined_input = f"{username}{surname}{dob}"
-            encryption_option = request.form.get('encryption', '0')
-
-            if encryption_option == '1':
-                shift = int(request.form.get('shift', 0))
-                encrypted_password = caesar_cipher(combined_input, shift)
-            elif encryption_option == '2':
-                num_rails = int(request.form.get('num_rails', 3))
-                encrypted_password = rail_fence_cipher(combined_input, num_rails)
-            else:
-                encrypted_password = combined_input
-
-        return render_template("generator.html", username=user["username"], encrypted_password=encrypted_password)
+    if request.method == 'GET':
+        generated_password = session.pop('generated_password', '')
+        return render_template("generator.html", encrypted_password=generated_password)
     
-    except Exception as e:
-        flash("Database connection error", "danger")
-        print(f"Generator error: {e}")
-        return redirect(url_for("login"))
+    elif request.method == 'POST':
+        username = request.form.get('username', '').lower()
+        surname = request.form.get('surname', '').lower()
+        combined_input = f"{username}{surname}".replace(" ", "")
+        encryption_option = request.form.get('encryption', '0')
 
+        if encryption_option == '1':
+            shift = int(request.form.get('shift', 0))
+            encrypted_password = caesar_cipher(combined_input, shift)
+        elif encryption_option == '2':
+            num_rails = int(request.form.get('num_rails', 3))
+            encrypted_password = rail_fence_cipher(combined_input, num_rails)
+        else:
+            shuffled = list(combined_input)
+            random.shuffle(shuffled)
+            encrypted_password = ''.join(shuffled)
+        session['generated_password'] = encrypted_password
+        return redirect(url_for('generator'))
+    
 @app.route('/manager')
 @login_required
 def manager():

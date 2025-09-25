@@ -26,6 +26,7 @@ body {
 h2{
     margin-bottom: 15px;
 }
+
 .nav-buttons {
     display: flex;
     justify-content: center;
@@ -42,6 +43,7 @@ h2{
     transition: all 0.3s ease;
     background-color: #e2e8f0;
     color: #4a5568;
+    width: 35vw;
 }
 
 .nav-btn.active {
@@ -328,30 +330,7 @@ h2{
     padding: 20px;
 }
 
-@media screen and (min-width: 768px) {
-    .container {
-        padding: 0 40px;
-    }
-    
-    .password-grid {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-        max-width: 100%;
-        margin: 0 auto;
-    }
-
-    .password-card {
-        max-width: 100%;
-    }
-
-    .modal-content {
-        width: 50%;
-        max-width: 500px;
-        margin: 10% auto;
-    }
-}
-
-@media screen and (max-width: 767px) {
+@media screen and (max-width: 768px) {
     .content-wrapper {
         padding: 10px;
     }

@@ -28,13 +28,16 @@ body {
 
 .header {
     text-align: center;
-    margin-bottom: 10px;
 }
 
-h2 {
+.header h2 {
     color: #1a365d;
-    font-size: 1.8em;
-    margin: 0;
+    font-size: 2.5em;
+    margin: 0 0 20px 0;
+}
+
+h2{
+    margin-bottom: 15px;
 }
 
 .form-container {
@@ -176,32 +179,6 @@ input:disabled {
     opacity: 0.6;
 }
 
-/* Mobile Responsiveness */
-@media screen and (max-width: 600px) {
-    .container {
-        width: 95%;
-        max-width: none;
-        margin: 10px auto;
-        padding: 0 10px;
-    }
-
-    .form-container, .result-container {
-        padding: 20px;
-    }
-
-    h2 {
-        font-size: 1.5em;
-    }
-
-    .submit-btn {
-        width: 100%;
-        margin: 0;
-    }
-
-    .slider-labels {
-        font-size: 0.7rem;
-    }
-}
 
 @media screen and (max-width: 768px) {
     .container {
@@ -234,21 +211,5 @@ input:disabled {
     .submit-btn {
         padding: 10px 20px;
         font-size: 0.9em;
-    }
-}
-
-@media screen and (max-width: 1024px) {
-    .container {
-        max-width: 700px;
-    }
-}
-
-@media screen and (max-width: 767px) {
-    .content-wrapper {
-        padding: 10px;
-    }
-    
-    .container {
-        padding: 10px;
     }
 }
